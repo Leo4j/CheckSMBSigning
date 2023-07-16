@@ -8,6 +8,8 @@ Write-Host ""
 
 $ErrorActionPreference = "SilentlyContinue"
 
+Write-Host " Checking Hosts..." -ForegroundColor Yellow
+
 # Get a list of all the computers in the domain
 $objSearcher = New-Object System.DirectoryServices.DirectorySearcher
 $objSearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry
