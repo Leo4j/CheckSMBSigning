@@ -20,6 +20,11 @@ $Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
 $Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
 $Computers = $Computers | Where-Object {$_ -ne "$env:computername.$jcurrentdomain"}
 
+$reachable_hosts = $null
+$Tasks = $null
+$total = $Computers.Count
+$count = 0
+
 $Tasks = $Computers | % {
 	Write-Progress -Activity "Scanning Ports" -Status "$count out of $total hosts scanned" -PercentComplete ($count / $total * 100)
 	$tcpClient = New-Object System.Net.Sockets.TcpClient
