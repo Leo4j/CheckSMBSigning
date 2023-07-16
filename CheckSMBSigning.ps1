@@ -72,9 +72,9 @@ else{
 $smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt
 
 Write-Host ""
-Write-Host "SMB Signing not required:" -ForegroundColor Yellow
+Write-Host " SMB Signing not required:" -ForegroundColor Yellow
 Write-Host ""
 $smbsigningnotrequired
 Write-Host ""
-Write-Host "Output saved to: $pwd\SMBSigningNotRequired.txt"
+Write-Host " Output saved to: $pwd\SMBSigningNotRequired.txt"
 Write-Host ""
