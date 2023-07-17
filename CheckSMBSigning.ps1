@@ -69,7 +69,7 @@ else{
 	$smbsigningnotrequired = $smbsigningnotrequired | ForEach-Object { $_.ToString().Replace("SMB signing is not required on ", "") }
 }
 
-$smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt
+$smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt -Encoding UTF8
 
 Write-Host ""
 Write-Host " SMB Signing not required:" -ForegroundColor Yellow
