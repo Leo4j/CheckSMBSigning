@@ -24,13 +24,8 @@ function CheckSMBSigning
 	Write-Output " Checking Hosts..."
 
  	if($Targets){
-  		$currentdomain = Get-WmiObject -Namespace root\cimv2 -Class Win32_ComputerSystem | Select Domain | Format-Table -HideTableHeaders | out-string | ForEach-Object { $_.Trim() }
   		$Computers = $Targets
     		$Computers = $Computers -split ","
-      		$Computers = $Computers | Where-Object {-not ($_ -cmatch "$env:computername")}
-		$Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
-		$Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
-		$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$currentdomain"}
 	}
   	else{
 		if($Domain){
@@ -87,7 +82,7 @@ function CheckSMBSigning
 	# foreach($reachable_host in $reachable_hosts){Invoke-SMBEnum -Target $reachable_host -Action All}
 	
 	if($reachable_hosts.Count -eq 1) {
-		$smbsigningnotrequired = Get-SMBSigning -DelayJitter 10 -Target $reachable_hosts
+		$smbsigningnotrequired = Get-SMBSigning -DelayJitter 10 -Target $reachable_hosts | Select-String "SMB signing is not required"
 		$smbsigningnotrequired = ($smbsigningnotrequired | Out-String) -split "`n"
 		$smbsigningnotrequired = $smbsigningnotrequired.Trim()
 		$smbsigningnotrequired = $smbsigningnotrequired | Where-Object { $_ -ne "" }
