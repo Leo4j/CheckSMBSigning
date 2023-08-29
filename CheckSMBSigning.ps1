@@ -5,38 +5,58 @@ function CheckSMBSigning
 		
 		[Parameter (Mandatory=$False, Position = 0, ValueFromPipeline=$true)]
 		[String]
-		$Targets
+		$Targets,
+
+  		[Parameter (Mandatory=$False, Position = 1, ValueFromPipeline=$true)]
+	        [String]
+	        $Domain,
+
+  		[Parameter (Mandatory=$False, Position = 2, ValueFromPipeline=$true)]
+	        [String]
+	        $OutputFile
 	
 	)
 	
-	Write-Host ""
+	Write-Output ""
 	
 	$ErrorActionPreference = "SilentlyContinue"
 	
-	Write-Host " Checking Hosts..." -ForegroundColor Yellow
+	Write-Output " Checking Hosts..." -ForegroundColor Yellow
 
  	if($Targets){
-  		$jcurrentdomain = Get-WmiObject -Namespace root\cimv2 -Class Win32_ComputerSystem | Select Domain | Format-Table -HideTableHeaders | out-string | ForEach-Object { $_.Trim() }
+  		$currentdomain = Get-WmiObject -Namespace root\cimv2 -Class Win32_ComputerSystem | Select Domain | Format-Table -HideTableHeaders | out-string | ForEach-Object { $_.Trim() }
   		$Computers = $Targets
     		$Computers = $Computers -split ","
       		$Computers = $Computers | Where-Object {-not ($_ -cmatch "$env:computername")}
 		$Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
 		$Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
-		$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$jcurrentdomain"}
+		$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$currentdomain"}
 	}
   	else{
-	
-		# Get a list of all the computers in the domain
-		$objSearcher = New-Object System.DirectoryServices.DirectorySearcher
-		$objSearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry
-		$objSearcher.Filter = "(&(sAMAccountType=805306369))"
-		$Computers = $objSearcher.FindAll() | %{$_.properties.dnshostname}
-		
-		$jcurrentdomain = Get-WmiObject -Namespace root\cimv2 -Class Win32_ComputerSystem | Select Domain | Format-Table -HideTableHeaders | out-string | ForEach-Object { $_.Trim() }
-		$Computers = $Computers | Where-Object {-not ($_ -cmatch "$env:computername")}
-		$Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
-		$Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
-		$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$jcurrentdomain"}
+		if($Domain){
+  			$objSearcher = New-Object System.DirectoryServices.DirectorySearcher
+			$objSearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$Domain")
+			$objSearcher.Filter = "(&(sAMAccountType=805306369))"
+			$Computers = $objSearcher.FindAll() | %{$_.properties.dnshostname}
+   			$Computers = $Computers | Where-Object {-not ($_ -cmatch "$env:computername")}
+			$Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
+			$Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
+			$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$Domain"}
+		}
+
+    		else{
+			# Get a list of all the computers in the domain
+			$objSearcher = New-Object System.DirectoryServices.DirectorySearcher
+			$objSearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry
+			$objSearcher.Filter = "(&(sAMAccountType=805306369))"
+			$Computers = $objSearcher.FindAll() | %{$_.properties.dnshostname}
+			
+			$currentdomain = Get-WmiObject -Namespace root\cimv2 -Class Win32_ComputerSystem | Select Domain | Format-Table -HideTableHeaders | out-string | ForEach-Object { $_.Trim() }
+			$Computers = $Computers | Where-Object {-not ($_ -cmatch "$env:computername")}
+			$Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
+			$Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
+			$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$currentdomain"}
+  		}
 
  	}
 	
@@ -86,14 +106,24 @@ function CheckSMBSigning
 		$smbsigningnotrequired = $smbsigningnotrequired | Where-Object { $_ -ne "" }
 		$smbsigningnotrequired = $smbsigningnotrequired | ForEach-Object { $_.ToString().Replace("SMB signing is not required on ", "") }
 	}
-	
-	$smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt -Encoding UTF8
-	
-	Write-Host ""
-	Write-Host " SMB Signing not required:" -ForegroundColor Yellow
-	Write-Host ""
-	$smbsigningnotrequired
-	Write-Host ""
-	Write-Host " Output saved to: $pwd\SMBSigningNotRequired.txt"
-	Write-Host ""
+
+ 	if($smbsigningnotrequired){
+
+  		if($OutputFile){$smbsigningnotrequired | Out-File $OutputFile -Encoding UTF8}
+    		else{$smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt -Encoding UTF8}
+		
+		Write-Output ""
+		Write-Output " SMB Signing not required:" -ForegroundColor Yellow
+		Write-Output ""
+		$smbsigningnotrequired
+		Write-Output ""
+		if($OutputFile){Write-Output " Output saved to: $OutputFile"}
+  		else{Write-Output " Output saved to: $pwd\SMBSigningNotRequired.txt"}
+		Write-Output ""
+  	}
+
+    	else{
+     		Write-Output " No hosts found where SMB-Signing is not required."
+	  	Write-Output ""
+	}
 }
