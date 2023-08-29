@@ -38,10 +38,6 @@ function CheckSMBSigning
 			$objSearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$Domain")
 			$objSearcher.Filter = "(&(sAMAccountType=805306369))"
 			$Computers = $objSearcher.FindAll() | %{$_.properties.dnshostname}
-   			$Computers = $Computers | Where-Object {-not ($_ -cmatch "$env:computername")}
-			$Computers = $Computers | Where-Object {-not ($_ -match "$env:computername")}
-			$Computers = $Computers | Where-Object {$_ -ne "$env:computername"}
-			$Computers = $Computers | Where-Object {$_ -ne "$env:computername.$Domain"}
 		}
 
     		else{
