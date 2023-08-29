@@ -21,7 +21,7 @@ function CheckSMBSigning
 	
 	$ErrorActionPreference = "SilentlyContinue"
 	
-	Write-Output " Checking Hosts..." -ForegroundColor Yellow
+	Write-Output " Checking Hosts..."
 
  	if($Targets){
   		$currentdomain = Get-WmiObject -Namespace root\cimv2 -Class Win32_ComputerSystem | Select Domain | Format-Table -HideTableHeaders | out-string | ForEach-Object { $_.Trim() }
@@ -113,7 +113,7 @@ function CheckSMBSigning
     		else{$smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt -Encoding UTF8}
 		
 		Write-Output ""
-		Write-Output " SMB Signing not required:" -ForegroundColor Yellow
+		Write-Output " SMB Signing not required:"
 		Write-Output ""
 		$smbsigningnotrequired
 		Write-Output ""
