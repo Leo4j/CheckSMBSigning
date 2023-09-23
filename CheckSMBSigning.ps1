@@ -64,10 +64,15 @@ function CheckSMBSigning
 		$asyncResult = $tcpClient.BeginConnect($_, 445, $null, $null)
 		$wait = $asyncResult.AsyncWaitHandle.WaitOne(50)
 		if($wait) {
+  			try{
 			$tcpClient.EndConnect($asyncResult)
-			$tcpClient.Close()
+			$connected = $true
 			$reachable_hosts += ($_ + "`n")
-		} else {}
+   			} catch {
+      			$connected = $false
+			}
+		} else {$connected = $false}
+  		$tcpClient.Close()
 		$count++
 	}
 	
