@@ -127,8 +127,10 @@ function CheckSMBSigning
 
  	if($smbsigningnotrequired){
 
-  		if($OutputFile){$smbsigningnotrequired | Out-File $OutputFile -Encoding UTF8}
-    		else{$smbsigningnotrequired | Out-File $pwd\SMBSigningNotRequired.txt -Encoding UTF8}
+  		if(!$OutputFile){$OutputFile = "$pwd\SMBSigningNotRequired.txt"}
+			
+		$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+		[System.IO.File]::WriteAllLines($OutputFile, $smbsigningnotrequired, $utf8NoBom)
 		
 		Write-Output ""
 		Write-Output " SMB Signing not required:"
